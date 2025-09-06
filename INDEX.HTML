@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakhi - Your PCOS Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFF8F9; /* Soft Ivory */
+            color: #3D405B;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #FADADD 0%, #FCE9F9 50%, #EBD4FC 100%);
+        }
+        .primary-btn {
+            background-color: #E07A5F;
+            color: white;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        .primary-btn:hover {
+            background-color: #D46A4D;
+            transform: scale(1.05);
+            box-shadow: 0 4px 14px 0 rgba(224, 122, 95, 0.39);
+        }
+        .primary-btn:disabled {
+            background-color: #f3a996;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        .secondary-btn {
+            background-color: transparent;
+            color: #E07A5F;
+            border: 1px solid #E07A5F;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+        }
+        .secondary-btn:hover {
+            background-color: #FCE9E9;
+            transform: scale(1.05);
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .nav-link:hover {
+            background-color: #FCE9E9;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #E07A5F;
+            transition: width 0.3s ease;
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+        .feature-card {
+            background-color: white;
+            border: 1px solid #FBCFE8; /* Pastel pink border */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Assessment Form Styles */
+        #assessment-form {
+            overflow: hidden;
+        }
+        .assessment-question {
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+            width: 100%;
+        }
+        .assessment-question.leaving {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-100%);
+        }
+        .assessment-question.entering {
+            position: relative;
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .assessment-option {
+            border: 2px solid #FBCFE8;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            border-radius: 0.75rem;
+        }
+        .assessment-option:hover, .assessment-option:focus {
+            border-color: #E07A5F;
+            outline: none;
+        }
+        .assessment-option.selected {
+            border-color: #E07A5F;
+            background-color: #FDF2EF;
+        }
+        /* Modal & Loader Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-backdrop.visible .modal-content {
+            transform: scale(1);
+        }
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            min-height: 150px;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #E07A5F;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Tracker Styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+        .calendar-day {
+            text-align: center;
+            padding: 0.75rem 0.25rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            position: relative;
+        }
+        .calendar-day.today {
+            background-color: #FCE9F9;
+        }
+        .calendar-day.other-month {
+            color: #cbd5e1;
+        }
+        .calendar-day:not(.other-month):hover {
+            background-color: #FADADD;
+        }
+        .calendar-day.selected {
+            background-color: #E07A5F;
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-day .log-dot {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .log-dot.period { background-color: #f87171; } /* Rose-red */
+        .log-dot.mood { background-color: #C084FC; } /* Lavender */
+
+        .mood-option {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            transition: transform 0.2s ease;
+            border: 2px solid transparent;
+        }
+        .mood-option:hover {
+            transform: scale(1.1);
+        }
+        .mood-option.selected {
+            border-color: #E07A5F;
+            background-color: #FDF2EF;
+        }
+        .profile-tab {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-bottom: 3px solid transparent;
+            transition: border-color 0.3s, color 0.3s;
+            position: relative;
+        }
+        .profile-tab::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background-color: #C084FC;
+            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .profile-tab.active {
+            color: #C084FC;
+            font-weight: 600;
+        }
+        .profile-tab.active::after {
+            width: 100%;
+        }
+        /* Mobile Menu Animation */
+        #mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+        }
+        #mobile-menu.open {
+             max-height: 500px; /* Adjust as needed */
+             transition: max-height 1s ease-in-out;
+        }
+        /* Pill-style toggle buttons */
+        .pill-toggle {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: 1px solid #E07A5F;
+            color: #E07A5F;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .pill-toggle.active, .pill-toggle:hover {
+            background-color: #E07A5F;
+            color: white;
+        }
+        .pill-toggle.clear {
+            border-color: #9ca3af;
+            color: #9ca3af;
+        }
+        .pill-toggle.clear:hover {
+             background-color: #9ca3af;
+             color: white;
+        }
+        /* Custom form focus states */
+        .form-input {
+             border-color: #FBCFE8;
+             box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+             transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #C084FC;
+            box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 left-0 right-0 z-50 border-b border-pink-200 shadow-sm">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-[#E07A5F]" onclick="navigateTo('home')">
+                Sakhi🌸
+            </a>
+            <nav id="main-nav" class="hidden md:flex items-center space-x-6">
+                <a href="#" class="nav-link" onclick="navigateTo('home')">Home</a>
+                <a href="#" class="nav-link" onclick="navigateTo('about-pcos')">About PCOS</a>
+                <a href="#" class="nav-link" onclick="navigateTo('the-science')">The Science</a>
+            </nav>
+             <div class="hidden md:flex items-center space-x-4">
+                 <div id="user-session" class="hidden">
+                     <a href="#" class="nav-link" onclick="navigateTo('profile')">My Profile</a>
+                 </div>
+                 <button class="secondary-btn px-4 py-2 rounded-full font-semibold" onclick="openAskAIModal()">
+                    ✨ Ask AI
+                </button>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden px-6 pb-4">
+             <!-- Mobile nav links will be dynamically inserted here -->
+        </div>
+    </header>
+
+    <main id="main-content" class="pt-20">
+        <!-- Page Content will be injected here -->
+    </main>
+    
+    <!-- AI Query Modal -->
+    <div id="ai-modal" class="modal-backdrop">
+        <div class="modal-content relative">
+            <button onclick="closeAskAIModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h3 class="text-2xl font-bold text-center mb-4">✨ Ask Sakhi AI</h3>
+            <p class="text-center text-gray-600 mb-6">Have a question about a symptom? Get a simple explanation from our AI.</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="modal-symptom-input" placeholder="e.g., Why am I losing hair?" class="form-input flex-grow px-4 py-2 bg-white rounded-md">
+                <button id="modal-symptom-submit-btn" class="primary-btn px-6 py-2 rounded-md font-semibold" onclick="handleSymptomQuery('modal-symptom-input', 'modal-symptom-explanation', 'modal-symptom-submit-btn')">Ask AI</button>
+            </div>
+            <div id="modal-symptom-explanation" class="mt-6 text-gray-700 text-base text-left bg-gray-50 p-4 rounded-md" style="display: none;"></div>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t border-pink-200">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-600">
+            <p class="text-2xl font-bold text-[#E07A5F] mb-4">Sakhi🌸</p>
+            <p>"From Awareness to Action — Your PCOS Companion."</p>
+            <div class="flex justify-center space-x-6 my-4">
+                <a href="#" class="hover:text-[#E07A5F]">Facebook</a>
+                <a href="#" class="hover:text-[#E07A5F]">Instagram</a>
+                <a href="#" class="hover:text-[#E07A5F]">Twitter</a>
+            </div>
+            <p class="text-sm">&copy; 2025 Sakhi Health. All rights reserved. This is a concept project and not a medical device.</p>
+        </div>
+    </footer>
+
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <p id="modal-message" class="mb-6"></p>
+            <button id="modal-close-btn" class="primary-btn px-8 py-2 rounded-full font-semibold">OK</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Initialization ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { 
+                apiKey: "YOUR_API_KEY", 
+                authDomain: "YOUR_AUTH_DOMAIN", 
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+
+        const mainContent = document.getElementById('main-content');
+        
+        // --- Global State Management ---
+        let currentUser = null; // Will be { uid, email, isAnonymous }
+        let userAssessmentData = null; // To store assessment results from Firestore
+        let userLogs = {}; // To store period and mood logs from Firestore
+        let tempAssessmentData = null; // Store assessment data before login
+        let unsubscribeLogs; // To detach Firestore listener
+
+        // Page Templates
+        const pages = {
+            home: `
+                <!-- Hero Section -->
+                <section class="gradient-bg py-20 md:py-32">
+                    <div class="container mx-auto px-6 text-center">
+                        <h1 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Take Control of Your Health Journey.</h1>
+                        <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8">Sakhi is an AI-powered companion for early PCOS detection and personalized lifestyle coaching, designed for the unique needs of Indian women.</p>
+                        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                            <button class="primary-btn px-8 py-3 rounded-full font-semibold text-lg shadow-lg" onclick="navigateTo('assessment')">Take Free Assessment</button>
+                            <button class="secondary-btn px-8 py-3 rounded-full font-semibold text-lg shadow-md" onclick="navigateTo('about-pcos')">Learn About PCOS</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- How it Works Section -->
+                <section class="py-16 md:py-24 bg-white">
+                    <div class="container mx-auto px-6">
+                        <div class="text-center mb-12">
+                            <h2 class="text-3xl md:text-4xl font-bold">From Awareness to Action</h2>
+                            <p class="text-gray-600 mt-2">A seamless two-step approach to proactive PCOS management.</p>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-12 items-center">
+                            <div class="text-center md:text-left">
+                                <span class="text-sm font-semibold text-[#E07A5F] bg-[#FDF2EF] px-3 py-1 rounded-full">Step 1</span>
+                                <h3 class="text-2xl font-bold my-4">🩺 AI-Powered Risk Screening</h3>
+                                <p class="text-gray-600">Our intelligent assessment tool analyzes your symptoms—like irregular cycles and acne—to provide a preliminary risk score. It's a confidential, ultrasound-free first step to understanding your body better.</p>
+                            </div>
+                            <div class="text-center md:text-left">
+                                <span class="text-sm font-semibold text-[#E07A5F] bg-[#FDF2EF] px-3 py-1 rounded-full">Step 2</span>
+                                <h3 class="text-2xl font-bold my-4">🍎 Personalized Lifestyle Coaching</h3>
+                                <p class="text-gray-600">Based on your goals and health data, Sakhi creates a customized, culturally-aware diet and workout plan. We translate medical advice into a simple, sustainable daily routine to help you thrive.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Features Section -->
+                <section class="py-16 md:py-24">
+                    <div class="container mx-auto px-6">
+                        <div class="text-center mb-12">
+                            <h2 class="text-3xl md:text-4xl font-bold">Features Designed For You</h2>
+                            <p class="text-gray-600 mt-2">Everything you need for a holistic approach to your well-being.</p>
+                        </div>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">Period & Mood Tracking</h3>
+                                <p class="text-gray-600">Log your cycle, mood, and symptoms on an interactive calendar to discover patterns in your health.</p>
+                            </div>
+                            <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">AI Risk Score</h3>
+                                <p class="text-gray-600">Receive an instant, data-driven PCOS risk assessment to guide your next steps.</p>
+                            </div>
+                            <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">✨ AI Meal Plans</h3>
+                                <p class="text-gray-600">Get PCOS-friendly meal ideas generated by AI, tailored to your personal health data.</p>
+                            </div>
+                            <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">Adaptive Workouts</h3>
+                                <p class="text-gray-600">From home-based yoga to gym routines, find an exercise plan that fits your life.</p>
+                            </div>
+                             <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">✨ AI Symptom Helper</h3>
+                                <p class="text-gray-600">Ask our AI for clear, simple explanations about PCOS symptoms and their causes.</p>
+                            </div>
+                            <div class="feature-card p-8">
+                                <h3 class="text-xl font-bold mb-2">📈 Progress Reports</h3>
+                                <p class="text-gray-600">Visualize your symptom trends and lifestyle changes over time with insightful charts and summaries.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Trust & Credibility Section -->
+                <section class="py-16 md:py-24 bg-white">
+                    <div class="container mx-auto px-6 text-center">
+                         <h2 class="text-3xl md:text-4xl font-bold">Built on Science, Guided by Experts</h2>
+                         <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Our methodology is grounded in established medical guidelines and validated by a clinical advisory board of leading Indian gynecologists and endocrinologists.</p>
+                         <div class="mt-8">
+                            <a href="#" class="text-[#E07A5F] font-semibold" onclick="navigateTo('the-science')">Learn about our scientific approach →</a>
+                         </div>
+                    </div>
+                </section>
+            `,
+            'about-pcos': `
+                <section class="py-16 md:py-24">
+                    <div class="container mx-auto px-6 max-w-4xl">
+                        <div class="text-center mb-12">
+                            <h1 class="text-4xl md:text-5xl font-bold">Understanding PCOS</h1>
+                            <p class="text-lg text-gray-600 mt-2">Clear, simple information about a complex condition.</p>
+                        </div>
+                        <div class="space-y-10 text-lg text-gray-700 leading-relaxed">
+                            <div>
+                                <h2 class="text-2xl font-bold mb-3">What is PCOS?</h2>
+                                <p>Polycystic Ovary Syndrome (PCOS) is the most common hormonal disorder among women of reproductive age. In India, it affects as many as one in five young women. It's a complex condition characterized by hormonal imbalances that can disrupt the menstrual cycle and lead to a range of physical and emotional symptoms.</p>
+                            </div>
+                            <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md">
+                                <h3 class="text-2xl font-bold text-center mb-4">✨ Ask Sakhi AI</h3>
+                                <p class="text-center text-gray-600 mb-6">Have a question about a symptom? Get a simple explanation from our AI.</p>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <input type="text" id="symptom-input" placeholder="e.g., Why am I losing hair?" class="form-input flex-grow px-4 py-2 bg-white rounded-md">
+                                    <button id="symptom-submit-btn" class="primary-btn px-6 py-2 rounded-md font-semibold" onclick="handleSymptomQuery('symptom-input', 'symptom-explanation', 'symptom-submit-btn')">Ask AI</button>
+                                </div>
+                                <div id="symptom-explanation" class="mt-6 text-gray-700 text-base text-left bg-gray-50 p-4 rounded-md" style="display: none;"></div>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold mb-3">Common Symptoms</h2>
+                                <ul class="list-disc list-inside space-y-2">
+                                    <li><strong>Irregular Periods:</strong> Cycles that are longer than 35 days, shorter than 21 days, infrequent, or absent.</li>
+                                    <li><strong>Excess Androgens:</strong> High levels of "male" hormones can cause physical signs like excess facial and body hair (hirsutism), severe acne, and male-pattern baldness.</li>
+                                    <li><strong>Weight Gain:</strong> Many women with PCOS find it difficult to manage their weight, often due to insulin resistance.</li>
+                                    <li><strong>Skin Darkening:</strong> Patches of dark, velvety skin (acanthosis nigricans) can appear in body folds and creases.</li>
+                                    <li><strong>Mood Changes:</strong> The hormonal fluctuations and stress of managing symptoms can lead to anxiety and depression.</li>
+                                </ul>
+                            </div>
+                             <div>
+                                <h2 class="text-2xl font-bold mb-3">Why Early Detection Matters</h2>
+                                <p>Globally, up to 70% of women with PCOS remain undiagnosed. This delay is not just frustrating; it sets off a domino effect of long-term health risks. Untreated PCOS is linked to:</p>
+                                <ul class="list-disc list-inside space-y-2 mt-4">
+                                    <li><strong>Infertility:</strong> PCOS is a leading cause of anovulatory infertility.</li>
+                                    <li><strong>Type 2 Diabetes:</strong> Due to a strong link with insulin resistance.</li>
+                                    <li><strong>Cardiovascular Disease:</strong> Including high blood pressure and high cholesterol.</li>
+                                    <li><strong>Endometrial Cancer:</strong> Increased risk due to irregular shedding of the uterine lining.</li>
+                                    <li><strong>Mental Health Challenges:</strong> Increased rates of depression and anxiety.</li>
+                                </ul>
+                                <p class="mt-4">Early detection and proactive lifestyle management are the most powerful tools to mitigate these risks and improve long-term quality of life.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `,
+            'the-science': `
+                <section class="py-16 md:py-24">
+                    <div class="container mx-auto px-6 max-w-4xl">
+                        <div class="text-center mb-12">
+                            <h1 class="text-4xl md:text-5xl font-bold">Our Scientific Approach</h1>
+                            <p class="text-lg text-gray-600 mt-2">Grounded in evidence, designed for impact.</p>
+                        </div>
+                        <div class="space-y-10 text-lg text-gray-700 leading-relaxed">
+                            <div>
+                                <h2 class="text-2xl font-bold mb-3">The AI Risk Screener: An "Ultrasound-Free" Triage</h2>
+                                <p>Our risk assessment model is built upon the internationally accepted <strong>Rotterdam criteria</strong>, the gold standard for PCOS diagnosis. A diagnosis requires at least two of the following three findings:</p>
+                                <ol class="list-decimal list-inside space-y-2 mt-4 bg-gray-50 p-6 rounded-xl">
+                                    <li><strong>Irregular ovulation,</strong> which you report as an irregular cycle.</li>
+                                    <li><strong>High levels of androgens,</strong> which you report through symptoms like acne or excess hair growth.</li>
+                                    <li><strong>Polycystic ovaries on an ultrasound.</strong></li>
+                                </ol>
+                                <p class="mt-4">Our innovation is to intelligently screen for the first two criteria, which can be self-reported without a clinical visit. This allows us to identify individuals with a high probability of having PCOS, empowering them to seek a formal diagnosis sooner and more confidently.</p>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold mb-3">The Lifestyle Coach: First-Line Therapy</h2>
+                                <p>International evidence-based guidelines are clear: lifestyle modification—diet and exercise—is the first-line therapy for managing PCOS. Even a modest weight loss of 5-10% can significantly improve insulin sensitivity, restore ovulation, and reduce symptoms.</p>
+                                <p class="mt-4">Our coaching engine translates these clinical recommendations into actionable, personalized plans:</p>
+                                <ul class="list-disc list-inside space-y-2 mt-4">
+                                    <li><strong>Nutrition:</strong> We focus on low-glycemic index (low-GI) and anti-inflammatory principles, adapted to the context of Indian cuisine. This means emphasizing whole grains, pulses, vegetables, and lean proteins while minimizing processed foods.</li>
+                                    <li><strong>Exercise:</strong> We recommend a combination of moderate-intensity cardio (150-300 mins/week) and muscle-strengthening activities (2 sessions/week), offering a variety of home-based and gym-based options.</li>
+                                </ul>
+                                <p class="mt-4">Our goal is to solve the "adherence problem" by turning abstract medical advice into a concrete, manageable, and sustainable daily routine.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `,
+            assessment: `
+                <section class="py-16 md:py-24">
+                    <div class="container mx-auto px-6 max-w-2xl">
+                        <div id="assessment-container">
+                            <div class="text-center mb-8">
+                                <h1 class="text-4xl font-bold">PCOS Risk Assessment</h1>
+                                <p class="text-gray-600 mt-2">Answer a few simple questions to get a preliminary risk score. This is not a medical diagnosis.</p>
+                                <p id="progress-label" class="text-sm text-gray-500 font-semibold mt-4"></p>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+                                <div id="progress-bar" class="bg-[#E07A5F] h-2.5 rounded-full" style="width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                            <div id="assessment-form" class="relative min-h-[350px]">
+                                <!-- Questions will be injected by JS -->
+                            </div>
+                            <div class="flex justify-between mt-8">
+                                <button id="prev-btn" class="secondary-btn px-8 py-3 rounded-full font-semibold" onclick="prevQuestion()" style="display: none;">Previous</button>
+                                <button id="next-btn" class="primary-btn px-8 py-3 rounded-full font-semibold ml-auto" onclick="nextQuestion()">Next</button>
+                            </div>
+                        </div>
+                        <div id="results-container" class="hidden text-center">
+                            <!-- Results will be injected here -->
+                        </div>
+                    </div>
+                </section>
+            `,
+            login: `
+                <section class="py-16 md:py-24">
+                    <div class="container mx-auto px-6 max-w-sm">
+                        <!-- Login Form -->
+                        <div id="login-view">
+                            <div class="text-center mb-12">
+                                <h1 class="text-4xl md:text-5xl font-bold">Welcome Back</h1>
+                                <p class="text-lg text-gray-600 mt-2">Log in to access your profile and plans.</p>
+                            </div>
+                            <form id="login-form" class="space-y-6">
+                                <div>
+                                    <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                                    <input type="email" id="login-email" required class="form-input mt-1 block w-full px-3 py-2 bg-white rounded-xl">
+                                </div>
+                                <div>
+                                    <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                                    <input type="password" id="login-password" required class="form-input mt-1 block w-full px-3 py-2 bg-white rounded-xl">
+                                </div>
+                                <div>
+                                    <button type="submit" class="w-full primary-btn px-6 py-3 rounded-xl font-semibold shadow-sm">Log In</button>
+                                </div>
+                            </form>
+                            <p class="mt-6 text-center text-sm text-gray-600">
+                                Don't have an account? <a href="#" id="show-signup" class="font-medium text-[#E07A5F] hover:underline">Sign up</a>
+                            </p>
+                        </div>
+                        <!-- Signup Form -->
+                        <div id="signup-view" class="hidden">
+                             <div class="text-center mb-12">
+                                <h1 class="text-4xl md:text-5xl font-bold">Create Account</h1>
+                                <p class="text-lg text-gray-600 mt-2">Join Sakhi to start your health journey.</p>
+                            </div>
+                            <form id="signup-form" class="space-y-6">
+                                <div>
+                                    <label for="signup-email" class="block text-sm font-medium text-gray-700">Email</label>
+                                    <input type="email" id="signup-email" required class="form-input mt-1 block w-full px-3 py-2 bg-white rounded-xl">
+                                </div>
+                                <div>
+                                    <label for="signup-password" class="block text-sm font-medium text-gray-700">Password (min. 6 characters)</label>
+                                    <input type="password" id="signup-password" required class="form-input mt-1 block w-full px-3 py-2 bg-white rounded-xl">
+                                </div>
+                                <div>
+                                    <button type="submit" class="w-full primary-btn px-6 py-3 rounded-xl font-semibold shadow-sm">Sign Up</button>
+                                </div>
+                            </form>
+                            <p class="mt-6 text-center text-sm text-gray-600">
+                                Already have an account? <a href="#" id="show-login" class="font-medium text-[#E07A5F] hover:underline">Log in</a>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            `,
+            profile: `
+                 <section class="py-16 md:py-24">
+                    <div id="profile-container" class="container mx-auto px-6 max-w-5xl">
+                         <div class="loader-container"><div class="loader"></div></div>
+                    </div>
+                </section>
+            `
+        };
+
+        // --- Navigation Logic ---
+        window.navigateTo = function(page) {
+            // Page protection
+            if (page === 'profile' && (!currentUser || currentUser.isAnonymous)) {
+                navigateTo('login');
+                return;
+            }
+
+            mainContent.innerHTML = pages[page] || '<div>Page not found</div>';
+            window.scrollTo(0, 0);
+            updateActiveNavLink(page);
+            
+            // Close mobile menu on navigation
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            
+            // Page-specific initializers
+            if (page === 'assessment') initializeAssessment();
+            if (page === 'login') setupAuthForms();
+            if (page === 'profile') renderProfilePage();
+        }
+        
+        // --- UI Update Functions ---
+        function updateHeader() {
+            const userSession = document.getElementById('user-session');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mainNav = document.getElementById('main-nav');
+
+            if (currentUser && !currentUser.isAnonymous) {
+                userSession.classList.remove('hidden');
+            } else {
+                userSession.classList.add('hidden');
+            }
+            
+            // Rebuild mobile menu content
+            mobileMenu.innerHTML = mainNav.innerHTML; // copy main nav links
+             mobileMenu.innerHTML += `<button class="secondary-btn w-full mt-4 px-6 py-2 rounded-full font-semibold" onclick="openAskAIModal()">✨ Ask AI</button>`;
+            if (currentUser && !currentUser.isAnonymous) {
+                 mobileMenu.innerHTML += `
+                    <a href="#" class="block py-2 text-center mt-2" onclick="navigateTo('profile')">My Profile</a>
+                 `;
+            }
+        }
+
+        function updateActiveNavLink(page) {
+            document.querySelectorAll('header .nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('onclick') === `MapsTo('${page}')`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // --- Mobile Menu ---
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('open');
+        });
+        
+        // --- Custom Modal Logic ---
+        const modal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        window.showModal = function(message) {
+            modalMessage.innerHTML = message; // Use innerHTML to allow for simple formatting
+            modal.classList.add('visible');
+        }
+
+        function hideModal() {
+            modal.classList.remove('visible');
+        }
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
+        });
+
+        // --- AI Modal Logic ---
+        const aiModal = document.getElementById('ai-modal');
+
+        window.openAskAIModal = function() {
+            if(aiModal) aiModal.classList.add('visible');
+        }
+
+        window.closeAskAIModal = function() {
+            if(aiModal) aiModal.classList.remove('visible');
+        }
+        
+        if(aiModal) {
+            aiModal.addEventListener('click', (e) => {
+                if (e.target === aiModal) closeAskAIModal();
+            });
+        }
+
+        // --- Authentication Logic ---
+        (async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Initial sign-in failed:", error);
+                if (!auth.currentUser) {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (anonError) {
+                        console.error("Anonymous sign-in also failed:", anonError);
+                    }
+                }
+            }
+        })();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = { uid: user.uid, email: user.email, isAnonymous: user.isAnonymous };
+                if (!user.isAnonymous) {
+                    await setupLogListener(); 
+                    if (tempAssessmentData) {
+                        await saveAssessmentResults(tempAssessmentData);
+                        tempAssessmentData = null; 
+                        if (window.location.hash !== '#profile-redirect') {
+                           window.location.hash = 'profile-redirect';
+                           navigateTo('profile');
+                        }
+                    }
+                }
+                if (window.location.hash === '#profile-redirect') {
+                    navigateTo('profile');
+                    window.location.hash = ''; 
+                }
+            } else {
+                currentUser = null;
+                userAssessmentData = null;
+                userLogs = {};
+                if (unsubscribeLogs) unsubscribeLogs();
+            }
+            updateHeader();
+        });
+        
+        async function setupLogListener() {
+            if (!currentUser || currentUser.isAnonymous) return;
+            if (unsubscribeLogs) unsubscribeLogs(); // Clear old listener
+
+            const assessmentRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, "assessment");
+            const assessmentSnap = await getDoc(assessmentRef);
+            if (assessmentSnap.exists()) {
+                userAssessmentData = assessmentSnap.data();
+            }
+            
+            const logsRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/logs`, "all");
+            unsubscribeLogs = onSnapshot(logsRef, (doc) => {
+                userLogs = doc.exists() ? doc.data() : {};
+                if (document.querySelector('#profile-content')) {
+                    const activeTab = document.querySelector('.profile-tab.active');
+                    renderSummaryCards(); // always update summary cards
+                    if(activeTab && activeTab.textContent.toLowerCase().includes('tracker')){
+                         renderProfileTracker();
+                    } else if(activeTab && activeTab.textContent.toLowerCase().includes('report')){
+                        renderProfileReports();
+                    }
+                }
+            });
+        }
+        
+        function setupAuthForms() {
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('signup-form').addEventListener('submit', handleSignup);
+            document.getElementById('show-signup').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('signup-view').classList.remove('hidden');
+            });
+            document.getElementById('show-login').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('signup-view').classList.add('hidden');
+                document.getElementById('login-view').classList.remove('hidden');
+            });
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.hash = 'profile-redirect';
+            } catch (error) {
+                showModal(`Login failed: ${error.message}`);
+            }
+        }
+        async function handleSignup(e) {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                window.location.hash = 'profile-redirect';
+            } catch (error) {
+                showModal(`Signup failed: ${error.message}`);
+            }
+        }
+        window.logout = async function() {
+            await signOut(auth);
+            await signInAnonymously(auth);
+            navigateTo('home');
+        };
+
+        async function saveAssessmentResults(data) {
+            if (!currentUser || currentUser.isAnonymous) {
+                tempAssessmentData = data;
+                showModal("Please log in or sign up to save your results and view your personalized plan.");
+                navigateTo('login');
+                return true; // Indicate that navigation occurred
+            }
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, "assessment");
+                await setDoc(docRef, data);
+                userAssessmentData = data; 
+                console.log("Assessment data saved.");
+            } catch(e) {
+                console.error("Error saving assessment data:", e);
+                showModal("Could not save your assessment data. Please try again.");
+            }
+            return false; // Indicate no navigation occurred
+        }
+
+        // --- Profile Page Logic ---
+        async function renderProfilePage() {
+             const profileContainer = document.getElementById('profile-container');
+             if (!profileContainer) return;
+
+             // Double-check auth state before rendering to prevent showing "Guest"
+             if (!currentUser || currentUser.isAnonymous) {
+                 navigateTo('login'); // Force redirect if somehow this page was reached
+                 return;
+             }
+
+             // 1. Show loader immediately while data is fetched
+             profileContainer.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
+            
+             // 2. Fetch the initial assessment data
+             const assessmentRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, "assessment");
+             const assessmentSnap = await getDoc(assessmentRef);
+             userAssessmentData = assessmentSnap.exists() ? assessmentSnap.data() : null;
+
+             // 3. Now that data is ready, render the full dashboard, replacing the loader
+             profileContainer.innerHTML = `
+                <div id="profile-welcome" class="md:flex justify-between items-center text-center md:text-left mb-8">
+                    <div>
+                        <h1 class="text-4xl md:text-5xl font-bold">My Dashboard</h1>
+                         <p id="welcome-message" class="text-lg text-gray-600 mt-2"></p>
+                    </div>
+                    <button class="primary-btn px-6 py-2 rounded-full font-semibold shadow-md mt-4 md:mt-0" onclick="logout()">
+                        Logout
+                    </button>
+                </div>
+                <div id="summary-cards" class="grid sm:grid-cols-2 gap-6 mb-8">
+                    <!-- Summary cards will be injected here -->
+                </div>
+                <div id="profile-tabs" class="flex flex-wrap justify-center border-b border-pink-200 mb-8">
+                    <div class="profile-tab active" onclick="switchProfileTab('plan')">My Plan</div>
+                    <div class="profile-tab" onclick="switchProfileTab('workouts')">My Workouts</div>
+                    <div class="profile-tab" onclick="switchProfileTab('tracker')">Symptom Tracker</div>
+                    <div class="profile-tab" onclick="switchProfileTab('reports')">Progress Report</div>
+                </div>
+                <div id="profile-content">
+                    <!-- Profile content will be injected here -->
+                </div>
+             `;
+
+            // 4. Populate the newly created elements with data
+             const welcomeMsg = document.getElementById('welcome-message');
+             if (welcomeMsg) {
+                welcomeMsg.textContent = `Welcome, ${currentUser.email || 'User'}`;
+             }
+             renderSummaryCards();
+             renderProfilePlan();
+        }
+
+        function renderSummaryCards() {
+            const container = document.getElementById('summary-cards');
+            if (!container) return;
+
+            // Card 1: Last Assessment
+            let assessmentCard = `
+                <div class="bg-white p-6 rounded-xl border border-pink-200 shadow-md text-center">
+                    <h3 class="font-semibold text-gray-500 text-sm mb-1">Latest Risk Score</h3>
+            `;
+            if (userAssessmentData) {
+                const probability = predictPCOS_RandomForest(userAssessmentData);
+                const riskPercent = Math.round(probability * 100);
+                let riskLevel, colorClass;
+                if (probability < 0.35) { riskLevel = 'Low'; colorClass = "text-green-600"; } 
+                else if (probability < 0.70) { riskLevel = 'Medium'; colorClass = "text-yellow-600"; }
+                else { riskLevel = 'High'; colorClass = "text-red-600"; }
+                assessmentCard += `<p class="text-3xl font-bold ${colorClass}">${riskPercent}%</p><p class="text-sm font-semibold ${colorClass}">(${riskLevel} Risk)</p>`;
+            } else {
+                assessmentCard += `<p class="text-gray-600 mt-2">No assessment taken yet.</p>`;
+            }
+            assessmentCard += `</div>`;
+            
+            // Card 2: Last Period
+            let periodCard = `
+                <div class="bg-white p-6 rounded-xl border border-pink-200 shadow-md text-center">
+                    <h3 class="font-semibold text-gray-500 text-sm mb-1">Last Period Start</h3>
+            `;
+            const sortedLogs = Object.keys(userLogs)
+                .filter(dateStr => userLogs[dateStr].period === 'start')
+                .sort((a, b) => new Date(b) - new Date(a));
+            
+            if (sortedLogs.length > 0) {
+                const lastDate = new Date(sortedLogs[0]);
+                periodCard += `<p class="text-3xl font-bold">${lastDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p><p class="text-sm text-gray-500">${lastDate.getFullYear()}</p>`;
+            } else {
+                 periodCard += `<p class="text-gray-600 mt-2">No period data logged.</p>`;
+            }
+            periodCard += `</div>`;
+
+            container.innerHTML = assessmentCard + periodCard;
+        }
+        
+        window.switchProfileTab = function(tabName) {
+            document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.profile-tab[onclick="switchProfileTab('${tabName}')"]`).classList.add('active');
+
+            if (tabName === 'plan') renderProfilePlan();
+            else if (tabName === 'workouts') renderProfileWorkouts();
+            else if (tabName === 'tracker') renderProfileTracker();
+            else if (tabName === 'reports') renderProfileReports();
+        }
+
+        function renderProfilePlan() {
+            const contentDiv = document.getElementById('profile-content');
+            if (!contentDiv) return;
+
+            if (userAssessmentData) {
+                contentDiv.innerHTML = `
+                    <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md">
+                        <h2 class="text-2xl font-bold mb-4 text-center">Your Personalized Meal Plan</h2>
+                        <p class="text-center text-gray-600 mb-8">Based on your recent assessment, here is a personalized meal plan generated by Sakhi AI to help you get started.</p>
+                        <div class="text-center mb-8">
+                            <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick='fetchPersonalizedDietPlan()'>✨ Generate My AI Diet Plan</button>
+                        </div>
+                        <div id="gemini-diet-plan" class="rounded-lg">
+                            <!-- AI content will be injected here -->
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md text-center">
+                        <h2 class="text-2xl font-bold mb-4">Get Started on Your Journey</h2>
+                        <p class="text-gray-600 mb-8">You haven't taken the assessment yet. Complete the assessment to unlock your personalized risk score and AI-powered lifestyle plans.</p>
+                        <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick="navigateTo('assessment')">Take Free Assessment</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderProfileWorkouts() {
+            const contentDiv = document.getElementById('profile-content');
+            if (!contentDiv) return;
+
+             if (userAssessmentData) {
+                contentDiv.innerHTML = `
+                    <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md">
+                        <h2 class="text-2xl font-bold mb-4 text-center">Your Personalized Workout Plan</h2>
+                        <p class="text-center text-gray-600 mb-8">Based on your assessment, here is a 7-day workout plan generated by Sakhi AI to help you get started.</p>
+                        <div class="text-center mb-8">
+                            <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick='fetchPersonalizedWorkoutPlan()'>🤸‍♀️ Generate My AI Workout Plan</button>
+                        </div>
+                        <div id="gemini-workout-plan" class="rounded-lg">
+                            <!-- AI workout content will be injected here -->
+                        </div>
+                    </div>
+                `;
+            } else {
+                 contentDiv.innerHTML = `
+                    <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md text-center">
+                        <h2 class="text-2xl font-bold mb-4">Complete Your Assessment First</h2>
+                        <p class="text-gray-600 mb-8">Take the free assessment to unlock your personalized workout plans.</p>
+                        <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick="navigateTo('assessment')">Take Free Assessment</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderProfileTracker() {
+            const contentDiv = document.getElementById('profile-content');
+            if (!contentDiv) return;
+            contentDiv.innerHTML = `
+                <div class="bg-white p-4 sm:p-8 rounded-xl border border-pink-200 shadow-md">
+                    <div class="grid lg:grid-cols-3 gap-8 items-start">
+                        <div id="calendar-container" class="lg:col-span-2"></div>
+                        <div id="log-panel-container"></div>
+                    </div>
+                </div>
+            `;
+            const now = new Date();
+            renderCalendar(now.getFullYear(), now.getMonth());
+            renderLogPanel(now);
+        }
+
+        function renderProfileReports() {
+            const contentDiv = document.getElementById('profile-content');
+            if (!contentDiv) return;
+
+            const logCount = Object.keys(userLogs).length;
+            if (logCount < 5) {
+                contentDiv.innerHTML = `
+                     <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md text-center">
+                        <h2 class="text-2xl font-bold mb-4">Not Enough Data Yet</h2>
+                        <p class="text-gray-600 mb-8">Keep logging your moods and cycles. Once you have more data, we'll generate insightful progress reports for you here!</p>
+                        <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick="switchProfileTab('tracker')">Go to Tracker</button>
+                    </div>
+                `;
+                return;
+            }
+
+            contentDiv.innerHTML = `
+                <div class="bg-white p-8 rounded-xl border border-pink-200 shadow-md">
+                    <h2 class="text-2xl font-bold mb-8 text-center">Your Progress Report</h2>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div class="text-center">
+                            <h3 class="font-semibold mb-2">Mood Distribution (Last 30 Days)</h3>
+                            <div class="relative h-64 w-64 mx-auto">
+                                <canvas id="moodChart"></canvas>
+                            </div>
+                        </div>
+                         <div class="text-center">
+                            <h3 class="font-semibold mb-2">Recent Cycle Lengths (Days)</h3>
+                            <div class="relative h-64">
+                                <canvas id="cycleChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="mt-12 grid sm:grid-cols-2 gap-6 text-center">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                             <h4 class="font-semibold text-gray-500 text-sm mb-1">Average Cycle Length</h4>
+                             <p id="avg-cycle-length" class="text-3xl font-bold">-</p>
+                        </div>
+                         <div class="bg-gray-50 p-6 rounded-lg">
+                             <h4 class="font-semibold text-gray-500 text-sm mb-1">Most Frequent Mood</h4>
+                             <p id="frequent-mood" class="text-3xl font-bold">-</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // --- Charting Logic ---
+            const moodCtx = document.getElementById('moodChart').getContext('2d');
+            const cycleCtx = document.getElementById('cycleChart').getContext('2d');
+
+            // Mood Data
+            const moodCounts = { 'Happy': 0, 'Neutral': 0, 'Sad': 0, 'Angry': 0, 'Stressed': 0 };
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            Object.keys(userLogs).forEach(dateStr => {
+                const logDate = new Date(dateStr);
+                if (logDate >= thirtyDaysAgo && userLogs[dateStr].mood) {
+                    moodCounts[userLogs[dateStr].mood]++;
+                }
+            });
+            const moodData = Object.values(moodCounts).filter(v => v > 0);
+            const moodLabels = Object.keys(moodCounts).filter(k => moodCounts[k] > 0);
+            if (moodLabels.length > 0) {
+                 new Chart(moodCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: moodLabels,
+                        datasets: [{
+                            data: moodData,
+                            backgroundColor: ['#9AE6B4', '#A0AEC0', '#F6E05E', '#F56565', '#C084FC'],
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                const frequentMoodEl = document.getElementById('frequent-mood');
+                const mostFrequent = Object.keys(moodCounts).reduce((a, b) => moodCounts[a] > moodCounts[b] ? a : b);
+                frequentMoodEl.textContent = mostFrequent;
+
+            }
+            
+
+            // Cycle Data
+            const starts = Object.keys(userLogs).filter(d => userLogs[d].period === 'start').sort();
+            const cycleLengths = [];
+            const cycleLabels = [];
+            for(let i = 0; i < starts.length - 1; i++) {
+                const start1 = new Date(starts[i]);
+                const start2 = new Date(starts[i+1]);
+                const diffTime = Math.abs(start2 - start1);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays > 10 && diffDays < 100) { // Basic validation
+                    cycleLengths.push(diffDays);
+                    cycleLabels.push(`${start1.toLocaleString('default', { month: 'short' })}`);
+                }
+            }
+            if (cycleLengths.length > 0) {
+                new Chart(cycleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: cycleLabels.slice(-5), // Last 5 cycles
+                        datasets: [{
+                            label: 'Cycle Length',
+                            data: cycleLengths.slice(-5),
+                            backgroundColor: '#FADADD',
+                            borderColor: '#E07A5F',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { scales: { y: { beginAtZero: true } }, responsive: true, maintainAspectRatio: false }
+                });
+                
+                const avgCycleEl = document.getElementById('avg-cycle-length');
+                const avg = cycleLengths.reduce((a, b) => a + b, 0) / cycleLengths.length;
+                avgCycleEl.textContent = `${Math.round(avg)} days`;
+
+            }
+        }
+
+        // --- Symptom Tracker Calendar Logic ---
+        let calendarDate = new Date();
+        let selectedDate = new Date();
+
+        function renderCalendar(year, month) {
+            calendarDate = new Date(year, month);
+            const container = document.getElementById('calendar-container');
+            if (!container) return;
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+            let header = `
+                <div class="flex justify-between items-center mb-4">
+                    <button onclick="changeMonth(-1)" class="p-2 rounded-full hover:bg-gray-100">&lt;</button>
+                    <h3 class="text-xl font-semibold">${monthNames[month]} ${year}</h3>
+                    <button onclick="changeMonth(1)" class="p-2 rounded-full hover:bg-gray-100">&gt;</button>
+                </div>
+                <div class="grid grid-cols-7 gap-2 text-center text-sm font-semibold text-gray-500 mb-2">
+                    ${daysOfWeek.map(day => `<div>${day}</div>`).join('')}
+                </div>
+            `;
+
+            let firstDay = new Date(year, month, 1).getDay();
+            let daysInMonth = new Date(year, month + 1, 0).getDate();
+            let grid = '<div class="calendar-grid">';
+            for (let i = 0; i < firstDay; i++) grid += '<div class="calendar-day other-month"></div>';
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateString = date.toISOString().split('T')[0];
+                const isSelected = dateString === selectedDate.toISOString().split('T')[0] ? 'selected' : '';
+                const isToday = date.getTime() === today.getTime() ? 'today' : '';
+                
+                let logData = userLogs[dateString];
+                let dots = '', tooltip = '';
+                if(logData) {
+                    let tooltipParts = [];
+                    if (logData.period) {
+                        dots += '<div class="log-dot period" style="transform: translateX(-100%)"></div>';
+                        tooltipParts.push(`Period: ${logData.period}`);
+                    }
+                    if (logData.mood) {
+                         dots += `<div class="log-dot mood" ${logData.period ? 'style="transform: translateX(0%)"' : ''}></div>`;
+                         tooltipParts.push(`Mood: ${logData.mood}`);
+                    }
+                    tooltip = tooltipParts.join(' | ');
+                }
+
+                grid += `<div class="calendar-day ${isSelected} ${isToday}" title="${tooltip}" onclick="selectCalendarDate(${year}, ${month}, ${day})">${day}${dots}</div>`;
+            }
+            grid += '</div>';
+            container.innerHTML = header + grid;
+        }
+
+        window.changeMonth = function(direction) {
+            calendarDate.setMonth(calendarDate.getMonth() + direction);
+            renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth());
+        }
+
+        window.selectCalendarDate = function(year, month, day) {
+            selectedDate = new Date(year, month, day);
+            renderCalendar(year, month);
+            renderLogPanel(selectedDate);
+        }
+
+        function renderLogPanel(date) {
+            const container = document.getElementById('log-panel-container');
+            if (!container) return;
+
+            const dateString = date.toISOString().split('T')[0];
+            const log = userLogs[dateString] || {};
+            const moods = ['😊 Happy', '😐 Neutral', '😔 Sad', '😠 Angry', '😩 Stressed'];
+
+            container.innerHTML = `
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-4 text-center">${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h4>
+                    
+                    <div class="mb-6 text-center">
+                        <p class="font-semibold mb-2">Period</p>
+                        <div class="flex justify-center space-x-2">
+                            <button class="pill-toggle ${log.period === 'start' ? 'active' : ''}" onclick="saveLog('period', 'start')">Start</button>
+                            <button class="pill-toggle ${log.period === 'end' ? 'active' : ''}" onclick="saveLog('period', 'end')">End</button>
+                            <button class="pill-toggle clear" onclick="saveLog('period', null)">Clear</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="font-semibold mb-3 text-center">Mood</p>
+                        <div class="flex justify-around">
+                            ${moods.map(mood => `
+                                <div class="mood-option text-3xl ${log.mood === mood.split(' ')[1] ? 'selected' : ''}" onclick="saveLog('mood', '${mood.split(' ')[1]}')">
+                                    ${mood.split(' ')[0]}
+                                </div>`).join('')}
+                        </div>
+                        <div class="text-center mt-3">
+                             <button class="text-sm secondary-btn px-4 py-1 rounded-full" onclick="saveLog('mood', null)">Clear Mood</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.saveLog = async function(key, value) {
+            if (!currentUser || currentUser.isAnonymous) {
+                showModal("Please log in to save your logs.");
+                return;
+            }
+            const dateString = selectedDate.toISOString().split('T')[0];
+            const logsRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/logs`, "all");
+            let currentLogs = { ...userLogs };
+            let logForDate = currentLogs[dateString] || {};
+            if (value === null) delete logForDate[key];
+            else logForDate[key] = value;
+            if (Object.keys(logForDate).length === 0) delete currentLogs[dateString];
+            else currentLogs[dateString] = logForDate;
+            try { await setDoc(logsRef, currentLogs); } 
+            catch(e) { console.error("Error saving log:", e); showModal("Could not save your log."); }
+        }
+        
+        // --- Assessment Logic ---
+        const assessmentQuestions = [
+            { key: 'cycle', question: "In the last 6 months, how would you describe your menstrual cycle?", options: [{ value: 'irregular', text: 'Very Irregular or Absent' }, { value: 'regular', text: 'Regular or Slightly Irregular' }] },
+            { key: 'acne', question: "How would you describe your experience with acne?", options: [{ value: 'yes', text: 'Persistent and Moderate/Severe' }, { value: 'no', text: 'Occasional or Clear Skin' }] },
+            { key: 'weight_gain', question: "Have you experienced unexplained or difficult-to-manage weight gain?", options: [{ value: 'yes', text: "Yes, it's a concern" }, { value: 'no', text: 'No, my weight is stable' }] },
+            { key: 'hair_growth', question: "Have you noticed unwanted, coarse, dark hair growth on your face, chest, or back?", options: [{ value: 'yes', text: "Yes, it's noticeable" }, { value: 'no', text: 'No, not really' }] },
+            { key: 'skin_darkening', question: "Have you noticed any patches of dark, velvety skin, especially in body folds?", options: [{ value: 'yes', text: "Yes, I have" }, { value: 'no', text: 'No, I have not' }] },
+            { key: 'hair_loss', question: "Have you experienced significant hair loss or thinning from your scalp?", options: [{ value: 'yes', text: "Yes, I have" }, { value: 'no', text: 'No, I have not' }] },
+            { type: 'number', key: 'age', question: "What is your age?", inputs: [{ id: 'age-input', placeholder: 'Age in years' }] },
+            { type: 'number', key: 'height_weight', question: "What are your height and weight?", inputs: [{ id: 'height-ft-input', placeholder: 'Feet' }, { id: 'height-in-input', placeholder: 'Inches' }, { id: 'weight-input', placeholder: 'Weight (kg)' }] },
+            { type: 'number', key: 'waist_hip', question: "What are your waist and hip measurements (inches)?", inputs: [{ id: 'waist-input', placeholder: 'Waist' }, { id: 'hip-input', placeholder: 'Hip' }] },
+            { key: 'fast_food', question: "Do you regularly consume fast food or processed foods?", options: [{ value: 'yes', text: "Yes, frequently" }, { value: 'no', text: 'No, rarely or never' }] },
+            { key: 'exercise', question: "Do you engage in regular physical exercise?", options: [{ value: 'yes', text: "Yes, regularly" }, { value: 'no', text: 'No, not regularly' }] }
+        ];
+        
+        let currentQuestionIndex = 0;
+        let assessmentAnswers = {};
+        
+        window.initializeAssessment = function() {
+            currentQuestionIndex = 0;
+            assessmentAnswers = {};
+            renderAssessmentQuestion();
+        }
+
+        function renderAssessmentQuestion() {
+            const form = document.getElementById('assessment-form');
+            if(!form) return;
+
+            const q = assessmentQuestions[currentQuestionIndex];
+            let html = `
+                <div class="assessment-question entering" data-question-index="${currentQuestionIndex}">
+                    <h2 class="text-2xl font-semibold mb-2 text-center">${q.question}</h2>
+                    ${q.subtext ? `<p class="text-center text-gray-500 mb-6 text-sm">${q.subtext}</p>` : '<div class="mb-6"></div>'}
+            `;
+
+            if (q.type !== 'number') {
+                html += '<div class="space-y-4">';
+                q.options.forEach(opt => {
+                    const isSelected = assessmentAnswers[q.key] === opt.value ? 'selected' : '';
+                    html += `<div class="assessment-option p-4 cursor-pointer ${isSelected}" tabindex="0" onclick="selectOption(this, '${q.key}', '${opt.value}')"><p class="font-semibold">${opt.text}</p></div>`;
+                });
+                html += '</div>';
+            } else {
+                 html += `<div class="max-w-md mx-auto grid grid-cols-${q.inputs.length > 2 ? 2 : q.inputs.length} gap-4">`;
+                 if(q.inputs.length > 2) { // Special case for height/weight
+                    html += `<input type="number" id="${q.inputs[0].id}" placeholder="${q.inputs[0].placeholder}" value="${assessmentAnswers[q.inputs[0].id] || ''}" class="form-input text-center text-lg p-2 rounded-xl">
+                             <input type="number" id="${q.inputs[1].id}" placeholder="${q.inputs[1].placeholder}" value="${assessmentAnswers[q.inputs[1].id] || ''}" class="form-input text-center text-lg p-2 rounded-xl">
+                             <input type="number" id="${q.inputs[2].id}" placeholder="${q.inputs[2].placeholder}" value="${assessmentAnswers[q.inputs[2].id] || ''}" class="form-input col-span-2 text-center text-lg p-2 rounded-xl">`;
+                } else {
+                     q.inputs.forEach(inp => {
+                        html += `<input type="number" id="${inp.id}" placeholder="${inp.placeholder}" value="${assessmentAnswers[inp.id] || ''}" class="form-input text-center text-lg p-2 rounded-xl">`;
+                    });
+                }
+                html += '</div>';
+            }
+            html += `</div>`;
+            
+            const oldQuestion = form.querySelector('.assessment-question');
+            if (oldQuestion) {
+                oldQuestion.classList.add('leaving');
+                setTimeout(() => { form.innerHTML = html; addKeyboardListeners(); }, 400); 
+            } else {
+                form.innerHTML = html;
+                addKeyboardListeners();
+            }
+            updateProgressBar();
+            updateNavButtons();
+        }
+
+        window.selectOption = function(element, key, value) {
+            const questionContainer = element.closest('.assessment-question');
+            questionContainer.querySelectorAll('.assessment-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            assessmentAnswers[key] = value;
+        }
+
+        function addKeyboardListeners() {
+             document.querySelectorAll('.assessment-option').forEach(option => {
+                option.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        option.click();
+                    }
+                });
+            });
+        }
+        
+        window.nextQuestion = async function() {
+            const q = assessmentQuestions[currentQuestionIndex];
+            if (q.type === 'number') {
+                let valid = true;
+                q.inputs.forEach(inp => {
+                    const inputEl = document.getElementById(inp.id);
+                    if (!inputEl.value || isNaN(parseFloat(inputEl.value)) || parseFloat(inputEl.value) < 0) {
+                        showModal(`Please enter a valid number for ${inp.placeholder}.`);
+                        valid = false;
+                    } else { assessmentAnswers[inp.id] = inputEl.value; }
+                });
+                if(!valid) return;
+            } else { if (!assessmentAnswers[q.key]) { showModal('Please select an option.'); return; } }
+            
+            if (currentQuestionIndex < assessmentQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderAssessmentQuestion();
+            } else { 
+                await showResults(); 
+            }
+        }
+
+        window.prevQuestion = function() { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderAssessmentQuestion(); } }
+        
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / assessmentQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-label').textContent = `Step ${currentQuestionIndex + 1} of ${assessmentQuestions.length}`;
+        }
+
+        function updateNavButtons() {
+            document.getElementById('prev-btn').style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+            document.getElementById('next-btn').innerText = currentQuestionIndex === assessmentQuestions.length - 1 ? 'See Results' : 'Next';
+        }
+
+        // --- Simulated Model & Results Logic ---
+        const randomForestModel = {
+            trees: [
+                (f) => { if (f.bmi > 27.5) { if (f.whr > 0.85 && f.cycle === 4) return 1.0; if (f.skin_darkening === 1) return 0.9; return 0.7; } else { if (f.cycle === 4 && f.pimples === 1) return 0.7; return 0.3; } },
+                (f) => { if (f.fast_food === 1 && f.exercise === 0) { if (f.weight_gain === 1 && f.bmi > 25) return 0.95; return 0.7; } if (f.cycle === 4) return 0.85; return 0.2; },
+                (f) => { if (f.cycle !== 4) return 0.15; if (f.age > 28) { if (f.whr > 0.82 && f.hair_growth === 1) return 1.0; return 0.8; } else { if (f.pimples === 1) return 0.8; return 0.5; } }
+            ]
+        };
+
+        function predictPCOS_RandomForest(features) {
+            const predictions = randomForestModel.trees.map(tree => tree(features));
+            const averagePrediction = predictions.reduce((sum, val) => sum + val, 0) / predictions.length;
+            return averagePrediction;
+        }
+
+        function generateLifestyleRecommendations(features) {
+            let recommendations = [];
+            if (features.bmi > 25 || features.fast_food === 1) {
+                recommendations.push({ title: "Focus on Nutrition", text: "Your inputs suggest that focusing on a whole-foods, low-glycemic diet could be beneficial. Try swapping processed snacks and fast food with fruits, vegetables, and lean proteins to help manage insulin levels." });
+            } else {
+                recommendations.push({ title: "Mindful Nutrition", text: "Continue to prioritize a balanced diet rich in fiber and nutrients. A focus on low-GI foods like whole grains and legumes can support stable energy levels and hormonal health." });
+            }
+            if (features.exercise === 0 || features.bmi > 25) {
+                recommendations.push({ title: "Incorporate Movement", text: "Since you're not exercising regularly, starting small is key. Aim for a 20-30 minute brisk walk most days. This can significantly improve insulin sensitivity and mood." });
+            } else {
+                 recommendations.push({ title: "Consistent Movement", text: "It's great that you're active! Consider incorporating a mix of cardio (like running or cycling) and strength training, which is particularly effective for managing PCOS symptoms." });
+            }
+            if (features.cycle === 4) {
+                 recommendations.push({ title: "Prioritize Sleep & Stress", text: "Because your cycles are irregular, focusing on stress management and consistent sleep can be very impactful. Aim for 7-9 hours of quality sleep per night to support hormonal regulation." });
+            } else {
+                recommendations.push({ title: "Stress Management", text: "Chronic stress can worsen hormonal imbalances. Practices like yoga, meditation, or even spending time in nature can help manage cortisol levels and support overall well-being." });
+            }
+            let cardsHTML = recommendations.map(rec => `<div class="bg-white p-6 rounded-xl border border-pink-200"><h4 class="font-bold text-lg mb-2">${rec.title}</h4><p class="text-gray-600 text-sm">${rec.text}</p></div>`).join('');
+            return `<div class="mt-10 text-left"><h3 class="text-2xl font-bold text-center mb-6">Your Personalized Lifestyle Plan</h3><p class="text-center text-gray-600 mb-8">Based on your assessment, here are some data-driven first steps you can take to support your hormonal health.</p><div class="grid md:grid-cols-3 gap-6">${cardsHTML}</div></div>`;
+        }
+        
+        // --- Gemini API Functions ---
+        
+        function parseMealPlanMarkdown(markdown) {
+            let html = '';
+            markdown = markdown.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            const firstHeadingIndex = markdown.indexOf('###');
+            if (firstHeadingIndex !== -1) {
+                const rationale = markdown.substring(0, firstHeadingIndex).trim();
+                if (rationale) {
+                    html += `<p class="text-gray-600 mb-6">${rationale.replace(/\n/g, '<br>')}</p>`;
+                }
+                markdown = markdown.substring(firstHeadingIndex);
+            }
+            const sections = markdown.split('### ').slice(1);
+            sections.forEach(section => {
+                const lines = section.trim().split('\n');
+                const title = lines.shift().trim();
+                let content = lines.join('\n').trim();
+                if (content.includes('* ')) {
+                    content = '<ul>' + content.split('* ').slice(1).map(item => `<li class="mb-2 text-gray-700 list-disc ml-5">${item.trim().replace(/\n/g, '<br>')}</li>`).join('') + '</ul>';
+                }
+                html += `
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-pink-200">
+                        <h4 class="font-bold text-lg text-[#E07A5F] mb-2">${title}</h4>
+                        <div class="prose prose-sm max-w-none">${content}</div>
+                    </div>`;
+            });
+            return html;
+        }
+
+        window.fetchPersonalizedDietPlan = async function() {
+            const mealPlanContainer = document.getElementById('gemini-diet-plan');
+            if (!userAssessmentData || !mealPlanContainer) return;
+            mealPlanContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            const symptoms = [];
+            if (userAssessmentData.cycle === 4) symptoms.push('irregular cycles');
+            if (userAssessmentData.weight_gain === 1) symptoms.push('weight gain');
+            const prompt = `You are an expert nutritionist specializing in PCOS for an Indian audience. Create a personalized, one-day sample meal plan for a user with the following profile:
+- Age: ${userAssessmentData.age}
+- BMI: ${userAssessmentData.bmi.toFixed(1)}
+- Key Symptoms Noted: ${symptoms.join(', ') || 'none specified'}
+Please format your response using strict Markdown with the following structure:
+1. Start with a single paragraph of rationale for the plan.
+2. Use a "### Hydration" heading for hydration advice, with bullet points using '*'.
+3. For each meal (Breakfast, Morning Snack, Lunch, Afternoon Snack, Dinner), use a "### [Meal Name]" heading.
+4. Under each meal heading, list the dish name and then use bullet points ('*') for ingredients or components.
+5. Conclude with a "### Important Considerations" section, with bullet points for key advice. Do not use any other formatting.`;
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) throw new Error(`API call failed`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    mealPlanContainer.innerHTML = parseMealPlanMarkdown(text);
+                } else {
+                    mealPlanContainer.innerHTML = '<p class="text-red-500">Sorry, could not generate a meal plan.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching meal plan:", error);
+                mealPlanContainer.innerHTML = '<p class="text-red-500">An error occurred. Please try again later.</p>';
+            }
+        }
+
+        function parseWorkoutPlanMarkdown(markdown) {
+            let html = '<div class="space-y-6">';
+            const days = markdown.split('### ').slice(1); // Split by days
+            days.forEach(day => {
+                const lines = day.trim().split('\n');
+                const title = lines.shift().trim();
+                let dayHtml = `<div class="bg-gray-50 p-6 rounded-lg border border-pink-200">
+                                <h4 class="font-bold text-xl text-[#E07A5F] mb-4">${title}</h4>`;
+                let currentSection = '';
+                lines.forEach(line => {
+                    if (line.startsWith('**')) {
+                        if (currentSection) dayHtml += '</ul>'; // Close previous list
+                        currentSection = line.replace(/\*\*/g, '').trim();
+                        dayHtml += `<h5 class="font-semibold mt-4 mb-2">${currentSection}</h5><ul class="list-disc list-inside text-gray-700">`;
+                    } else if (line.startsWith('*')) {
+                        dayHtml += `<li class="mb-1">${line.substring(1).trim()}</li>`;
+                    }
+                });
+                if (currentSection) dayHtml += '</ul>'; // Close the last list
+                dayHtml += '</div>';
+                html += dayHtml;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        window.fetchPersonalizedWorkoutPlan = async function() {
+            const workoutPlanContainer = document.getElementById('gemini-workout-plan');
+            if (!userAssessmentData || !workoutPlanContainer) return;
+            workoutPlanContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            const exerciseLevel = userAssessmentData.exercise === 1 ? 'regularly active' : 'currently sedentary';
+            const prompt = `You are a certified fitness coach specializing in PCOS. Create a personalized, 7-day workout plan for a user with the following profile:
+- Age: ${userAssessmentData.age}
+- BMI: ${userAssessmentData.bmi.toFixed(1)}
+- Current Activity Level: ${exerciseLevel}
+The plan should be PCOS-friendly, combining low-impact cardio, strength training, and mindful movement.
+Please format your response using strict Markdown with the following structure for EACH of the 7 days:
+### Day [Number]: [Focus, e.g., Light Cardio & Core]
+**Warm-up:**
+* 5 minutes of light jogging in place
+* 10 arm circles (forward and backward)
+**Workout:**
+* 20 minutes of brisk walking
+* 3 sets of 15-20 squats (bodyweight)
+**Cool-down:**
+* 5 minutes of gentle stretching (holding each stretch for 20-30 seconds)
+Do not include any introductory or concluding paragraphs outside of this daily structure.`;
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) throw new Error(`API call failed`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    workoutPlanContainer.innerHTML = parseWorkoutPlanMarkdown(text);
+                } else {
+                    workoutPlanContainer.innerHTML = '<p class="text-red-500">Sorry, could not generate a workout plan.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching workout plan:", error);
+                workoutPlanContainer.innerHTML = '<p class="text-red-500">An error occurred. Please try again later.</p>';
+            }
+        }
+
+        window.handleSymptomQuery = async function(inputId, outputId, buttonId) {
+            const input = document.getElementById(inputId);
+            const explanationDiv = document.getElementById(outputId);
+            const submitBtn = document.getElementById(buttonId);
+            const userQuery = input.value.trim();
+            if (!userQuery) {
+                showModal("Please enter a symptom or question.");
+                return;
+            }
+            if (!explanationDiv || !submitBtn) { return; }
+            explanationDiv.style.display = 'block';
+            explanationDiv.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+            const prompt = `As a caring health assistant named Sakhi, explain the potential connection between PCOS and "${userQuery}" in simple, empathetic terms (2-3 sentences). Do not give medical advice.`;
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                if (!response.ok) throw new Error(`API call failed`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts) {
+                    explanationDiv.innerHTML = result.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+                } else {
+                    explanationDiv.innerHTML = '<p class="text-red-500">Sorry, I could not find an explanation for that.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching symptom explanation:", error);
+                explanationDiv.innerHTML = '<p class="text-red-500">An error occurred. Please try again later.</p>';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50');
+            }
+        };
+        
+        async function showResults() {
+            const progressBar = document.getElementById('progress-bar');
+            if(progressBar) progressBar.style.width = `100%`;
+
+            const mapToBinary = (val) => val === 'yes' ? 1 : 0;
+            const height_ft = parseFloat(assessmentAnswers['height-ft-input']) || 0;
+            const height_in = parseFloat(assessmentAnswers['height-in-input']) || 0;
+            const height_m = ((height_ft * 12) + height_in) * 0.0254;
+            const rawFeatures = {
+                cycle: assessmentAnswers.cycle === 'irregular' ? 4 : 2,
+                pimples: mapToBinary(assessmentAnswers.acne),
+                weight_gain: mapToBinary(assessmentAnswers.weight_gain),
+                hair_growth: mapToBinary(assessmentAnswers.hair_growth),
+                skin_darkening: mapToBinary(assessmentAnswers.skin_darkening),
+                hair_loss: mapToBinary(assessmentAnswers.hair_loss),
+                age: parseFloat(assessmentAnswers['age-input']),
+                weight_kg: parseFloat(assessmentAnswers['weight-input']),
+                waist_in: parseFloat(assessmentAnswers['waist-input']),
+                hip_in: parseFloat(assessmentAnswers['hip-input']),
+                fast_food: mapToBinary(assessmentAnswers.fast_food),
+                exercise: mapToBinary(assessmentAnswers.exercise)
+            };
+            rawFeatures.bmi = (parseFloat(assessmentAnswers['weight-input']) || 0) / (height_m * height_m);
+            rawFeatures.whr = (parseFloat(assessmentAnswers['waist-input']) || 0) / (parseFloat(assessmentAnswers['hip-input']) || 1);
+            if (isNaN(rawFeatures.bmi) || !isFinite(rawFeatures.bmi) || height_m <= 0) {
+                 showModal("Invalid height or weight. Please try again.");
+                 initializeAssessment();
+                 return;
+            }
+            const probability = predictPCOS_RandomForest(rawFeatures);
+            const riskPercent = Math.round(probability * 100);
+            let riskLevel, description, colorClass;
+            if (probability < 0.35) {
+                riskLevel = 'Low';
+                description = "Your symptoms and biometrics do not strongly align with the common patterns of PCOS. Maintaining a healthy lifestyle is always beneficial for overall well-being.";
+                colorClass = "text-green-600";
+            } else if (probability < 0.70) {
+                riskLevel = 'Medium';
+                description = "You've indicated some symptoms or metrics that are sometimes associated with PCOS. It would be a good idea to monitor them and consider discussing them with a doctor.";
+                colorClass = "text-yellow-600";
+            } else {
+                riskLevel = 'High';
+                description = "Based on your inputs, there is a high likelihood they could be related to PCOS. This is not a diagnosis. We strongly recommend sharing these results with a gynecologist.";
+                colorClass = "text-red-600";
+            }
+            const navigatedAway = await saveAssessmentResults(rawFeatures);
+            if (navigatedAway) return; // Stop execution if we navigated to login page
+
+            const lifestyleHTML = generateLifestyleRecommendations(rawFeatures);
+            const authPromptHTML = (!currentUser || currentUser.isAnonymous) ? `
+                 <div class="mt-8">
+                    <h3 class="font-semibold mb-2">Next Steps:</h3>
+                    <p class="text-gray-500 mb-4">Log in or create an account to save your results and get a personalized AI-powered diet plan.</p>
+                    <button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick="navigateTo('login')">Login to Save & Continue</button>
+                </div>
+            ` : `<div class="mt-8"><button class="primary-btn px-8 py-3 rounded-full font-semibold shadow-lg" onclick="navigateTo('profile')">Go to My Profile</button></div>`;
+
+            const resultsHTML = `
+                <h2 class="text-3xl font-bold mb-4">Your AI-Powered Assessment Result</h2>
+                <div class="bg-white p-8 rounded-xl shadow-md border border-pink-200">
+                    <p class="text-lg mb-2">PCOS Risk Probability:</p>
+                    <p class="text-6xl font-bold ${colorClass}">${riskPercent}%</p>
+                    <p class="text-2xl font-semibold ${colorClass} mb-4">(${riskLevel} Risk)</p>
+                    <p class="text-gray-600 max-w-md mx-auto">${description}</p>
+                    ${authPromptHTML}
+                </div>
+                ${lifestyleHTML}
+                <button class="secondary-btn px-6 py-2 rounded-full font-semibold mt-10" onclick="navigateTo('assessment')">Take Assessment Again</button>
+            `;
+            
+            const assessmentContainer = document.getElementById('assessment-container');
+            const resultsContainer = document.getElementById('results-container');
+            if (assessmentContainer && resultsContainer) {
+                assessmentContainer.style.display = 'none';
+                resultsContainer.innerHTML = resultsHTML;
+                resultsContainer.style.display = 'block';
+            }
+        }
+        
+        // --- Expose functions & Initial Load ---
+        window.navigateTo = navigateTo;
+        window.logout = logout;
+        window.nextQuestion = nextQuestion;
+        window.prevQuestion = prevQuestion;
+        window.selectOption = selectOption;
+        window.handleSymptomQuery = handleSymptomQuery;
+        window.fetchPersonalizedDietPlan = fetchPersonalizedDietPlan;
+        window.fetchPersonalizedWorkoutPlan = fetchPersonalizedWorkoutPlan;
+        window.switchProfileTab = switchProfileTab;
+        window.changeMonth = changeMonth;
+        window.selectCalendarDate = selectCalendarDate;
+        window.saveLog = saveLog;
+        window.openAskAIModal = openAskAIModal;
+        window.closeAskAIModal = closeAskAIModal;
+        navigateTo('home');
+    </script>
+</body>
+</html>
